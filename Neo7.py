@@ -14,7 +14,8 @@ class DummyServer(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(b"🟢 Alpha V3 Bot Python System is LIVE!")
+        # DAH DIADUT: Tiada lagi emoji dalam bytes untuk elak ASCII SyntaxError
+        self.wfile.write(b"Alpha V3 Bot Python System is LIVE!")
 
 def run_server():
     port = int(os.environ.get("PORT", 3000))
@@ -47,7 +48,7 @@ RULES = {
     "maxTop10Holders": 15   # Maksimum 15%
 }
 
-print("🟢 [SYSTEM] Arkitek Alpha V3 (Neo7.py) Diaktifkan...")
+print("🟢 [SYSTEM] Arkitek V3 (Neo7.py) Diaktifkan...")
 
 # ==========================================
 # 3. INTERFACES API SEBENAR (DATA-DRIVEN)
@@ -57,7 +58,6 @@ def get_dexscreener_data(address):
         res = requests.get(f"https://api.dexscreener.com/latest/dex/tokens/{address}", timeout=10).json()
         if not res.get("pairs") or len(res["pairs"]) == 0: 
             return None
-        # Ambil pair volume paling tinggi
         pairs = sorted(res["pairs"], key=lambda x: x.get("volume", {}).get("h24", 0), reverse=True)
         return pairs[0]
     except:
@@ -116,7 +116,7 @@ def process_token(address, chat_id):
     if mc == 0 or (vol24h / mc) < RULES["minVolMCRatio"]: 
         return {"status": "rejected", "msg": "Volume/MC Ratio bawah 1.0x"}
     
-    # LAPIS 2: Anti-Manipulasi (Kira Buy Pressure dari transaksi m5)
+    # LAPIS 2: Anti-Manipulasi (Kira Buy Pressure)
     buys = token.get("txns", {}).get("m5", {}).get("buys", 1)
     sells = token.get("txns", {}).get("m5", {}).get("sells", 1)
     total_txns = buys + sells
@@ -169,7 +169,7 @@ def process_token(address, chat_id):
 def cmd_start(message):
     global is_scanning
     is_scanning = True
-    bot.reply_to(message, "🟢 *Enjin Radar Diaktifkan (Python).* Mengimbas pasaran...", parse_mode="Markdown")
+    bot.reply_to(message, "🟢 *Enjin Radar Diaktifkan.* Mengimbas pasaran...", parse_mode="Markdown")
 
 @bot.message_handler(commands=['stop'])
 def cmd_stop(message):
@@ -180,7 +180,6 @@ def cmd_stop(message):
 @bot.message_handler(commands=['scan'])
 def cmd_scan(message):
     bot.reply_to(message, "⚙️ *Manual Scan Triggered.* Enjin memulakan imbasan...", parse_mode="Markdown")
-    # Sini kalau ada list tracking trending boleh diganti, buat masa ni run log biasa
     print("[MANUAL] Scan dipanggil")
 
 @bot.message_handler(commands=['ca'])
@@ -190,9 +189,7 @@ def cmd_ca(message):
         bot.reply_to(message, "Sila masukkan CA selepas command. Contoh: `/ca 0x...`", parse_mode="Markdown")
         return
     
-    loading = bot.reply_to(message, f"🔍 *Mengimbas Smart Contract:*
-`{address}`
-⏳ Menjalankan tapisan Alpha V3...", parse_mode="Markdown")
+    loading = bot.reply_to(message, f"🔍 *Mengimbas Smart Contract:*\n`{address}`\n⏳ Menjalankan tapisan Alpha V3...", parse_mode="Markdown")
     res = process_token(address, message.chat.id)
     
     if res["status"] == "rejected":
