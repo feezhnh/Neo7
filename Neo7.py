@@ -42,14 +42,14 @@ is_scanning = False
 sent_signals = set()
 chat_target_id = None 
 
-# THE ULTIMATE LOW-CAP HIGH-ACCURACY
+# THE ULTIMATE LOW-CAP HIGH-ACCURACY (ADJUSTED SWEET SPOT)
 RULES = {
-    "minMC": 250000,
-    "maxMC": 1500000,
-    "minLiqRatio": 0.20,
-    "minVolMCRatio": 1.0,
-    "buyVolPressure": 0.65,
-    "maxTop10Holders": 15
+    "minMC": 150000,        # Min 150k MC
+    "maxMC": 2000000,       # Max 2M MC
+    "minLiqRatio": 0.10,    # Liquidity min 10% dari MC
+    "minVolMCRatio": 0.5,   # Volume 24h min separuh dari MC
+    "buyVolPressure": 0.55, # Tekanan belian 55% (Uptrend sihat)
+    "maxTop10Holders": 15   # Kekalkan! Ini perlindungan anti-whale yang cemerlang
 }
 
 print("🟢 [SISTEM] Blueprint Alpha V3 Terkunci & Aktif.")
