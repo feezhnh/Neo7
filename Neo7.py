@@ -235,21 +235,25 @@ def cmd_resume(message):
 
 @bot.message_handler(commands=['ca'])
 def cmd_ca(message):
+    # 1. Asingkan perangkap untuk format salah
     try:
         address = message.text.split()[1]
-        bot.reply_to(message, f"⚙️ Memulakan Imbasan Neo7 V1 untuk CA:\n`{address}`", parse_mode="Markdown")
+    except IndexError:
+        bot.reply_to(message, "❌ Format salah. Taip: `/ca <contract_address>`", parse_mode="Markdown")
+        return
+
+    bot.reply_to(message, f"⚙️ Memulakan Imbasan Neo7 V1 untuk CA:\n`{address}`", parse_mode="Markdown")
+    
+    # 2. Perangkap khusus untuk ralat API & Telegram
+    try:
         dex_data = get_dexscreener_data(address, search_type="ca")
-        
         if dex_data:
-            # 1. Tembak signal terus ke VIP Channel
             send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID) 
-            
-            # 2. Beritahu kat DM kau yang kerja dah siap
             bot.reply_to(message, "✅ Signal berjaya ditembak ke VIP Channel!")
         else: 
-            bot.reply_to(message, "❌ Data DexScreener gagal diakses. Pastikan CA sah.")
-    except Exception as e: 
-        bot.reply_to(message, "❌ Format salah. Taip: `/ca <contract_address>`", parse_mode="Markdown")
+            bot.reply_to(message, "❌ Data DexScreener gagal diakses.")
+    except Exception as e:
+        bot.reply_to(message, f"❌ GAGAL HANTAR KE CHANNEL!\nSila pastikan Bot telah dijadikan ADMIN di VIP Channel.\n\nRalat teknikal: `{str(e)}`", parse_mode="Markdown")
 
 # Server Endpoint untuk pastikan bot tak mati (Keep-Alive dari Alpha V3)
 class RenderHandler(BaseHTTPRequestHandler):
