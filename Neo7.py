@@ -3,40 +3,39 @@ import time
 import requests
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import schedule
 import threading
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # =====================================================================
 # 1. KONFIGURASI KESELAMATAN (ENVIRONMENT VARIABLES)
 # =====================================================================
-# Wajib set variable ini dalam server/hosting anda (Heroku/Render/VPS)
 TELEGRAM_BOT_TOKEN = "8529207956:AAE8Kb-j8soVd1se9WLj4OgpX5rwNPTOrYU"
-VIP_CHANNEL_ID = os.environ.get("VIP_CHANNEL_ID", "-100_ID_CHANNEL_KAU")
-ADMIN_ID = os.environ.get("ADMIN_ID", "ID_TELEGRAM_KAU")
+VIP_CHANNEL_ID = os.environ.get("VIP_CHANNEL_ID", "-1003943365561")
+ADMIN_ID = os.environ.get("ADMIN_ID", "970309251")
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
-IS_SCANNING = True
+IS_SCANNING = True  # Dibawa masuk dari Alpha V3
 
 # =====================================================================
-# 2. PARAMETER NEO7: TRENCH SNIPER (ULTRA-LOW CAP)
+# 2. PARAMETER NEO7: (ULTRA-LOW CAP)
 # =====================================================================
-MC_MIN = 50000           # Minimum $50k Market Cap
-MC_MAX = 2000000         # Maximum $2M Market Cap
-MIN_LIQUIDITY = 15000    # Minimum Liquidity $15k
-MIN_VOL_LIQ_RATIO = 2.0  # Volume mesti 2x ganda dari Liquidity
-MIN_5M_CHANGE = 10.0     # Mesti pam lebih 10% dalam 5 minit terakhir
+MC_MIN = 50000           
+MC_MAX = 2000000         
+MIN_LIQUIDITY = 15000    
+MIN_VOL_LIQ_RATIO = 2.0  
+MIN_5M_CHANGE = 10.0     
 
 # =====================================================================
-# 3. LIVE API FETCHERS (DEXSCREENER FOKUS)
+# 3. LIVE API (DEXSCREENER FOKUS)
 # =====================================================================
 def get_dexscreener_data(query, search_type="ca"):
     try:
-        # Untuk Neo7, kita fokus cari by Contract Address (CA) atau pair
         url = f"https://api.dexscreener.com/latest/dex/tokens/{query}" if search_type == "ca" else f"https://api.dexscreener.com/latest/dex/search?q={query}"
             
         res = requests.get(url, timeout=10).json()
         if res.get('pairs'):
-            # Ambil pair yang paling tinggi liquidity
             pair = sorted(res['pairs'], key=lambda x: x.get('liquidity', {}).get('usd', 0), reverse=True)[0]
             
             chain_id = pair.get('chainId', 'unknown')
@@ -79,7 +78,6 @@ def get_dexscreener_data(query, search_type="ca"):
 # 4. NEO7 MICRO ENGINE: PENAPISAN & ANTI-RUG KETAT
 # =====================================================================
 def verify_security_strict(network, ca):
-    # FUNGSI WAJIB LULUS (MINT REVOKED & LP BURNT/LOCKED)
     if network.lower() in ['solana', 'sol']:
         try:
             res = requests.get(f"https://api.rugcheck.xyz/v1/tokens/{ca}/report", timeout=5).json()
@@ -98,19 +96,18 @@ def verify_security_strict(network, ca):
             return True, "✅ LP BURNED & MINT REVOKED", res.get('score', 0)
         except: return False, "⚠️ Gagal API RugCheck", 1000
     else:
-        # Fallback EVM (Boleh sambung API TokenSniffer sini kelak)
         return True, "✅ PASSED (EVM Safe Assumption)", 0
 
 def execute_neo7_protocol(dex_data):
-    if not (MC_MIN <= dex_data['market_cap'] <= MC_MAX): return False, "MC Di Luar Radar"
-    if dex_data['liquidity'] < MIN_LIQUIDITY: return False, "Liquidity Terlalu Rendah"
+    if not (MC_MIN <= dex_data['market_cap'] <= MC_MAX): return False
+    if dex_data['liquidity'] < MIN_LIQUIDITY: return False
     
     vol_liq_ratio = dex_data['volume_24h'] / dex_data['liquidity'] if dex_data['liquidity'] > 0 else 0
-    if vol_liq_ratio < MIN_VOL_LIQ_RATIO: return False, f"Vol/Liq Ratio Rendah ({vol_liq_ratio:.1f}x)"
+    if vol_liq_ratio < MIN_VOL_LIQ_RATIO: return False
     
-    if dex_data['price_change_5m'] < MIN_5M_CHANGE: return False, "Momentum M5 Lemah"
+    if dex_data['price_change_5m'] < MIN_5M_CHANGE: return False
     
-    return True, "LULUS NEO7"
+    return True
 
 # =====================================================================
 # 5. NEO7 TELEGRAM EXECUTION (DYNAMIC UI)
@@ -119,22 +116,16 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
     is_sol = dex_data['network'].lower() in ['solana', 'sol']
     ca = dex_data['contract_address']
     
-    # 1. Semakan Keselamatan Ketat
     is_safe, sec_msg, sec_score = verify_security_strict(dex_data['network'], ca)
-    
-    # Jika Auto-Scan, kita nak bot DROP koin yang gagal anti-rug. 
-    # Tapi kalau manual check (/ca), kita paparkan je.
-    
     vol_ratio = dex_data['volume_24h'] / dex_data['liquidity'] if dex_data['liquidity'] > 0 else 0
     
-    # Setup Mesej Ala Sniper V1
-    msg = f"""🚨 <b>TRENCH SNIPER V1: MOMENTUM DETECTED!</b> 🚨
+    msg = f"""🚨 <b>ULTRA-LOW CAP V1: MOMENTUM DETECTED!</b> 🚨
 
 ⛓ <b>Chain:</b> {dex_data['network']}
 🪙 <b>Token:</b> {dex_data['name']} ({dex_data['symbol']})
 📝 <b>CA:</b> <code>{ca}</code>
 
-📊 <b>DATA PASARAN (5-Min Snap):</b>
+📊 <b>DATA MARKET (5-Min):</b>
 💰 <b>Market Cap:</b> ${dex_data['market_cap']:,.0f}
 💧 <b>Liquidity:</b> ${dex_data['liquidity']:,.0f}
 🔄 <b>Volume:</b> ${dex_data['volume_24h']:,.0f}
@@ -145,10 +136,7 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
 {sec_msg}
 """
 
-    # Dynamic Inline Keyboard Setup
     markup = InlineKeyboardMarkup()
-    
-    # Butang 1: Tools & Scanner
     twitter_search = f"https://twitter.com/search?q=%24{dex_data['symbol']}"
     chain_url = dex_data.get('chain_raw', 'solana').lower()
     
@@ -170,25 +158,81 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
         )
         markup.row(
             InlineKeyboardButton("🔎 TokenSniffer", url=f"https://tokensniffer.com/token/{ca}"),
-            InlineKeyboardButton("🔗 Explorer", url=f"https://dexscreener.com/{chain_url}/{ca}") # Fallback explorer
+            InlineKeyboardButton("🔗 Explorer", url=f"https://dexscreener.com/{chain_url}/{ca}") 
         )
         buy_bot_name = "🦄 BUY ON MAESTRO"
         buy_bot_url = f"https://t.me/maestro?start={ca}"
 
-    # Sosial Media Link
     soc_btns = []
     if dex_data.get('website'): soc_btns.append(InlineKeyboardButton("🌐 Website", url=dex_data['website']))
     if dex_data.get('telegram'): soc_btns.append(InlineKeyboardButton("💬 Telegram", url=dex_data['telegram']))
     if soc_btns: markup.row(*soc_btns)
     
-    # Butang Buy Utama
     markup.row(InlineKeyboardButton(buy_bot_name, url=buy_bot_url))
 
     bot.send_message(target_chat_id, msg, parse_mode="HTML", reply_markup=markup, disable_web_page_preview=True)
 
 # =====================================================================
-# 6. COMMANDS & MANUAL SNIPING
+# 6. ENJIN PENGIMBAS (NEO7)
 # =====================================================================
+def run_live_scan():
+    # Contoh array carian. Dalam Neo7 kita ping network SOL dan Base secara umum
+    search_queries = ["solana", "base"] 
+    
+    for query in search_queries:
+        print(f"\n[📡] Menyemak Rangkaian: {query.upper()}...")
+        # Ping API menggunakan fungsi Neo7
+        dex_data = get_dexscreener_data(query, search_type="network")
+        
+        if not dex_data: 
+            print(f"   [!] Gagal dapat data {query.upper()}. Berehat 15 saat...")
+            time.sleep(15)
+            continue
+            
+        sym = dex_data.get('symbol', 'UNKNOWN')
+        print(f"   [🔍] Menganalisis token {sym} di rangkaian {query.upper()}...")
+        
+        # Eksekusi protokol Neo7 (Tanpa RSI/Fibo)
+        if execute_neo7_protocol(dex_data):
+            # Semak sekuriti ketat. Jika gagal, DROP terus (jangan blast)
+            is_safe, sec_msg, sec_score = verify_security_strict(dex_data['network'], dex_data['contract_address'])
+            if is_safe:
+                print(f"   🔥 [LULUS NEO7 & SAFE] Signal ditemui untuk {sym.upper()}!")
+                send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID)
+            else:
+                 print(f"   ❌ [GAGAL ANTI-RUG] Token {sym.upper()} diabaikan. ({sec_msg})")
+        else:
+            print(f"   📉 [GAGAL PARAMETER] Token {sym.upper()} tidak menepati kriteria.")
+        
+        time.sleep(5) 
+
+def main_job():
+    global IS_SCANNING
+    if not IS_SCANNING: return
+    
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ⚙️ Kitaran Auto-Scan Neo7 Bermula...")
+    run_live_scan()
+
+# =====================================================================
+# 7. TELEGRAM COMMANDS & BULLETPROOF SCHEDULER
+# =====================================================================
+@bot.message_handler(commands=['scan'])
+def cmd_scan(message): 
+    bot.reply_to(message, "⏳ Memaksa kitaran imbasan manual Neo7...")
+    threading.Thread(target=main_job).start()
+
+@bot.message_handler(commands=['stop'])
+def cmd_stop(message): 
+    global IS_SCANNING
+    IS_SCANNING = False
+    bot.reply_to(message, "🛑 Sistem Auto-Scan Neo7 Dihentikan.")
+
+@bot.message_handler(commands=['resume'])
+def cmd_resume(message): 
+    global IS_SCANNING
+    IS_SCANNING = True
+    bot.reply_to(message, "✅ Sistem Auto-Scan Neo7 Disambung semula.")
+
 @bot.message_handler(commands=['ca'])
 def cmd_ca(message):
     try:
@@ -197,30 +241,33 @@ def cmd_ca(message):
         dex_data = get_dexscreener_data(address, search_type="ca")
         
         if dex_data:
-            # Uji kelayakan teknikal (hanya beri amaran, tidak sekat kalau buat manual /ca)
-            passed, reason = execute_neo7_protocol(dex_data)
-            if passed: bot.reply_to(message, "✅ Parameter LULUS (Momentum Kuat!)")
-            else: bot.reply_to(message, f"⚠️ Parameter GAGAL: {reason}")
-            
-            # Tembak terus ke channel atau chat
-            send_neo7_signal(dex_data, target_chat_id=message.chat.id) # Hantar kat DM user
+            send_neo7_signal(dex_data, target_chat_id=message.chat.id) 
         else: bot.reply_to(message, "❌ Data DexScreener gagal diakses. Pastikan CA sah.")
     except Exception as e: 
         bot.reply_to(message, "❌ Format salah. Taip: `/ca <contract_address>`", parse_mode="Markdown")
 
-# Server Endpoint untuk pastikan bot tak mati (Keep-Alive)
+# Server Endpoint untuk pastikan bot tak mati (Keep-Alive dari Alpha V3)
 class RenderHandler(BaseHTTPRequestHandler):
     def do_GET(self): self.send_response(200); self.end_headers(); self.wfile.write(b"Neo7 TRENCH SNIPER V1 ACTIVE")
     def log_message(self, format, *args): pass
 
+def run_scheduler():
+    schedule.every(15).minutes.do(lambda: threading.Thread(target=main_job).start())
+    while True:
+        try: schedule.run_pending()
+        except Exception as e: print(f"\n[⚠️] Ralat Penjadualan: {e}. Meneruskan kitaran...")
+        time.sleep(1)
+
 if __name__ == "__main__":
     threading.Thread(target=lambda: HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 8080))), RenderHandler).serve_forever(), daemon=True).start()
+    threading.Thread(target=run_scheduler, daemon=True).start()
     
     print("=======================================")
-    print("🚀 NEO7 TRENCH SNIPER V1 BEROPERASI")
+    print("🚀 NEO7 ULTRA V1 ACTIVATE")
     print("=======================================")
     
-    try: bot.send_message(ADMIN_ID, "🚨 HELLO, NEO7 TRENCH SNIPER V1 ACTIVATED!")
+    try: bot.send_message(ADMIN_ID, "🚨 HELLO, NEO7 ULTRA ACTIVATED!")
     except: pass
     
+    threading.Thread(target=main_job).start()
     bot.infinity_polling(timeout=20, long_polling_timeout=20)
