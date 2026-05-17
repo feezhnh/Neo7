@@ -10,7 +10,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 # 1. KONFIGURASI KESELAMATAN (ENVIRONMENT VARIABLES)
 # =====================================================================
 # Wajib set variable ini dalam server/hosting anda (Heroku/Render/VPS)
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "TOKEN_BOT_KAU_DI_SINI")
+TELEGRAM_BOT_TOKEN = "8529207956:AAE8Kb-j8soVd1se9WLj4OgpX5rwNPTOrYU"
 VIP_CHANNEL_ID = os.environ.get("VIP_CHANNEL_ID", "-100_ID_CHANNEL_KAU")
 ADMIN_ID = os.environ.get("ADMIN_ID", "ID_TELEGRAM_KAU")
 
