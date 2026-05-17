@@ -12,8 +12,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 # 1. KONFIGURASI KESELAMATAN (ENVIRONMENT VARIABLES)
 # =====================================================================
 TELEGRAM_BOT_TOKEN = "8529207956:AAE8Kb-j8soVd1se9WLj4OgpX5rwNPTOrYU"
-VIP_CHANNEL_ID = os.environ.get("VIP_CHANNEL_ID", "-1003943365561")
-ADMIN_ID = os.environ.get("ADMIN_ID", "970309251")
+VIP_CHANNEL_ID = "-1003943365561"
+ADMIN_ID = "970309251"
 
 bot = telebot.TeleBot(TELEGRAM_BOT_TOKEN)
 IS_SCANNING = True  # Dibawa masuk dari Alpha V3
