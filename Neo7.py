@@ -119,7 +119,7 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
     is_safe, sec_msg, sec_score = verify_security_strict(dex_data['network'], ca)
     vol_ratio = dex_data['volume_24h'] / dex_data['liquidity'] if dex_data['liquidity'] > 0 else 0
     
-        msg = f"""🚨 <b>ULTRA-LOW CAP V1: MOMENTUM DETECTED!</b> 🚨
+    msg = f"""🚨 <b>ULTRA-LOW CAP V1: MOMENTUM DETECTED!</b> 🚨
 
 ⛓ <b>Chain:</b> {dex_data['network']}
 🪙 <b>Token:</b> {dex_data['name']} ({dex_data['symbol']})
