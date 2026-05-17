@@ -131,6 +131,7 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
 🔄 <b>Volume:</b> ${dex_data['volume_24h']:,.0f}
 ⚡ <b>Vol/Liq Ratio:</b> <b>{vol_ratio:.2f}x</b> 🔥
 🚀 <b>5M Change:</b> <b>+{dex_data['price_change_5m']}%</b> 🟢
+⏳ <b>Token Age:</b> <b>{dex_data['age_display']}</b>
 
 🎯 <b>TRADE SETUP:</b>
 📍 <b>Entry Zone:</b> <code>${dex_data['price_usd']:.8f}</code> (Market Price)
