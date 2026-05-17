@@ -180,42 +180,70 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
 # 6. ENJIN PENGIMBAS (NEO7)
 # =====================================================================
 def run_live_scan():
-    # Contoh array carian. Dalam Neo7 kita ping network SOL dan Base secara umum
-    search_queries = ["solana", "base"] 
+    # Gunakan pelbagai kata kunci untuk tangkap koin hype yang baru
+    search_queries = ["solana", "base", "meme", "ai", "dog"] 
     
     for query in search_queries:
-        print(f"\n[📡] Menyemak Rangkaian: {query.upper()}...")
-        # Ping API menggunakan fungsi Neo7
-        dex_data = get_dexscreener_data(query, search_type="network")
-        
-        if not dex_data: 
-            print(f"   [!] Gagal dapat data {query.upper()}. Berehat 15 saat...")
-            time.sleep(15)
-            continue
+        print(f"\n[📡] Menebar Pukat Carian: {query.upper()}...")
+        try:
+            # Panggil API DexScreener secara terus untuk dapatkan banyak koin
+            url = f"https://api.dexscreener.com/latest/dex/search?q={query}"
+            res = requests.get(url, timeout=10).json()
+            pairs = res.get('pairs', [])
             
-        sym = dex_data.get('symbol', 'UNKNOWN')
-        print(f"   [🔍] Menganalisis token {sym} di rangkaian {query.upper()}...")
+            if not pairs:
+                print(f"   [!] Tiada data untuk {query.upper()}.")
+                time.sleep(5)
+                continue
+                
+            print(f"   [🔍] Menapis {len(pairs)} koin dari radar...")
+            
+            # Loop (Bedah) setiap koin yang dijumpai satu persatu
+            for pair in pairs:
+                chain_id = pair.get('chainId', 'unknown').upper()
+                sym = pair.get('baseToken', {}).get('symbol', 'UNKNOWN')
+                
+                # Susun data untuk diuji oleh Neo7
+                created_at = pair.get('pairCreatedAt', 0)
+                age_days = (int(time.time() * 1000) - created_at) / (1000 * 60 * 60 * 24) if created_at else 0
+                age_display = f"{int(age_days * 24)} Jam" if age_days * 24 >= 1 else f"{int(age_days * 24 * 60)} Minit" if age_days < 1 else f"{int(age_days)} Hari"
+                
+                info = pair.get('info', {})
+                socials = info.get('socials', [])
+                
+                dex_data = {
+                    'name': pair.get('baseToken', {}).get('name', 'Unknown'),
+                    'symbol': sym,
+                    'contract_address': pair.get('baseToken', {}).get('address', 'Unknown'),
+                    'price_usd': float(pair.get('priceUsd', 0)),
+                    'market_cap': float(pair.get('fdv', 0)), 
+                    'volume_24h': float(pair.get('volume', {}).get('h24', 0)),
+                    'price_change_5m': float(pair.get('priceChange', {}).get('m5', 0)), 
+                    'liquidity': float(pair.get('liquidity', {}).get('usd', 0)),
+                    'network': chain_id,
+                    'chain_raw': pair.get('chainId', 'unknown').lower(), 
+                    'age_display': age_display,
+                    'website': info.get('websites', [{}])[0].get('url') if info.get('websites') else None,
+                    'twitter_official': next((s.get('url') for s in socials if s.get('type') == 'twitter'), None),
+                    'telegram': next((s.get('url') for s in socials if s.get('type') == 'telegram'), None),
+                    'pair_address': pair.get('pairAddress', '')
+                }
+                
+                # Ujian 1: Parameter Neo7 (MC, Liquidity, Volume 5M)
+                if execute_neo7_protocol(dex_data):
+                    # Ujian 2: Anti-Rug Ketat
+                    is_safe, sec_msg, sec_score = verify_security_strict(dex_data['network'], dex_data['contract_address'])
+                    if is_safe:
+                        print(f"   🔥 [BINGO!] Signal LULUS untuk {sym.upper()}! Menembak ke VIP...")
+                        send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID)
+                        time.sleep(3) # Jarakkan 3 saat supaya Telegram tak block bot sebab spam
+                    else:
+                        print(f"   ❌ [ANTI-RUG] {sym.upper()} dikesan bahaya. Dibuang.")
         
-        # Eksekusi protokol Neo7 (Tanpa RSI/Fibo)
-        if execute_neo7_protocol(dex_data):
-            # Semak sekuriti ketat. Jika gagal, DROP terus (jangan blast)
-            is_safe, sec_msg, sec_score = verify_security_strict(dex_data['network'], dex_data['contract_address'])
-            if is_safe:
-                print(f"   🔥 [LULUS NEO7 & SAFE] Signal ditemui untuk {sym.upper()}!")
-                send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID)
-            else:
-                 print(f"   ❌ [GAGAL ANTI-RUG] Token {sym.upper()} diabaikan. ({sec_msg})")
-        else:
-            print(f"   📉 [GAGAL PARAMETER] Token {sym.upper()} tidak menepati kriteria.")
-        
-        time.sleep(5) 
-
-def main_job():
-    global IS_SCANNING
-    if not IS_SCANNING: return
-    
-    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ⚙️ Kitaran Auto-Scan Neo7 Bermula...")
-    run_live_scan()
+        except Exception as e:
+            print(f"   [⚠️] Ralat Imbasan: {e}")
+            
+        time.sleep(5) # Rehat sebelum cari keyword seterusnya
 
 # =====================================================================
 # 7. TELEGRAM COMMANDS & BULLETPROOF SCHEDULER
