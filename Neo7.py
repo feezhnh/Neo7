@@ -241,8 +241,13 @@ def cmd_ca(message):
         dex_data = get_dexscreener_data(address, search_type="ca")
         
         if dex_data:
-            send_neo7_signal(dex_data, target_chat_id=message.chat.id) 
-        else: bot.reply_to(message, "❌ Data DexScreener gagal diakses. Pastikan CA sah.")
+            # 1. Tembak signal terus ke VIP Channel
+            send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID) 
+            
+            # 2. Beritahu kat DM kau yang kerja dah siap
+            bot.reply_to(message, "✅ Signal berjaya ditembak ke VIP Channel!")
+        else: 
+            bot.reply_to(message, "❌ Data DexScreener gagal diakses. Pastikan CA sah.")
     except Exception as e: 
         bot.reply_to(message, "❌ Format salah. Taip: `/ca <contract_address>`", parse_mode="Markdown")
 
