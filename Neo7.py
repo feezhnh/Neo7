@@ -177,7 +177,7 @@ def send_neo7_signal(dex_data, target_chat_id=VIP_CHANNEL_ID):
     bot.send_message(target_chat_id, msg, parse_mode="HTML", reply_markup=markup, disable_web_page_preview=True)
 
 # =====================================================================
-# 6. ENJIN PENGIMBAS (NEO7)
+# 6. ENJIN PENGIMBAS (NEO7 AUTO-SCANNER)
 # =====================================================================
 def run_live_scan():
     # Gunakan pelbagai kata kunci untuk tangkap koin hype yang baru
@@ -244,6 +244,13 @@ def run_live_scan():
             print(f"   [⚠️] Ralat Imbasan: {e}")
             
         time.sleep(5) # Rehat sebelum cari keyword seterusnya
+
+def main_job():
+    global IS_SCANNING
+    if not IS_SCANNING: return
+    
+    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] ⚙️ Kitaran Auto-Scan Neo7 Bermula...")
+    run_live_scan()
 
 # =====================================================================
 # 7. TELEGRAM COMMANDS & BULLETPROOF SCHEDULER
