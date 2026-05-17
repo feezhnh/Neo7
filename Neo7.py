@@ -1,8 +1,8 @@
 import os
 import time
+import requests
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-import schedule
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
