@@ -21,11 +21,11 @@ IS_SCANNING = True  # Dibawa masuk dari Alpha V3
 # =====================================================================
 # 2. PARAMETER NEO7: (ULTRA-LOW CAP)
 # =====================================================================
-MC_MIN = 50000           
-MC_MAX = 2000000         
-MIN_LIQUIDITY = 15000    
-MIN_VOL_LIQ_RATIO = 2.0  
-MIN_5M_CHANGE = 10.0     
+MC_MIN = 30000           
+MC_MAX = 3000000         
+MIN_LIQUIDITY = 10000    
+MIN_VOL_LIQ_RATIO = 0.0  
+MIN_5M_CHANGE = 2.0     
 
 # =====================================================================
 # 3. LIVE API (DEXSCREENER FOKUS)
